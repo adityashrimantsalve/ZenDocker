@@ -1,0 +1,298 @@
+#!/bin/bash
+
+#Install Docker
+
+echo "yum update -y
+yum config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+yum install docker-ce docker-ce-cli containerd.io --allowerasing -y
+systemctl start docker
+systemctl enable docker" > update.sh
+
+install=$(zenity --forms --title="Docker" --text="Do you want to Install Docker/Update?" --add-entry="Type Yes if want to")
+
+if [ "$install" == "Yes" ]; then
+  sh update.sh
+else
+  echo "Thank for using Zenity"
+fi
+rm update.sh -f
+break
+
+#Select operation need to perform
+
+select=$(zenity --list --title="DOCKER" --text="Operations" --radiolist --column="" --column="Select option" TRUE "Image Pull" FALSE "View Image" FALSE "Image Inspect" FALSE "Delete Image" FALSE "Image Push" FALSE "Create Container" FALSE "Remove Container" FALSE "Docker Volume" FALSE "Enviroment/open" FALSE "Docker File" --width=300 --height=360)
+
+  #Image-Pull
+
+if [ "$select" == "Image Pull" ]; then
+    pull=$(zenity --forms --title="Image" --text="Name" --add-entry="Name of Image")
+    docker pull docker.io/"$pull"
+break
+    #Create Container
+
+elif [ "$select" == "Create Container" ]; then
+    create=$(zenity --forms --title="Container" --text="Welcome" --add-entry="Mode" --add-entry="Container state" --add-entry="Name for Container" --add-entry="Image Name")
+    mode=$(echo "$create" | cut -d "|" -f1)
+    state=$(echo "$create" | cut -d "|" -f2)
+    container=$(echo "$create" | cut -d "|" -f3)
+    name=$(echo "$create" | cut -d "|" -f4)
+    docker "$state" --name "$container" -"$mode" "$name"
+break
+   #Push
+
+elif [ "$select" == "Image Push" ]; then
+docker login
+push=$(zenity --forms --title="Docker Push" --add-entry="Enter Old Image name" --add-entry="Registry/username" --add-entry="Repo" --add-entry="Enter a New Image-name" )
+push1=$(echo "$push" | cut -d "|" -f1 )
+push2=$(echo "$push" | cut -d "|" -f2 )
+push3=$(echo "$push" | cut -d "|" -f3 )
+push4=$(echo "$push" | cut -d "|" -f4 )
+docker pull "$push1"
+docker tag "$push1" "$push2"/"$push3":"$push4"
+docker push "$push2"/"$push3":"$push4"
+break
+   #Remove/Delete
+
+elif [ "$select" == "Remove Container" ]; then
+docker ps > delete.txt
+
+zenity --text-info --filename="delete.txt" --height=500 --width=750
+
+delete=$(zenity --forms --title=Deleting --add-entry="Container ID/Name")
+
+docker stop "$delete"
+
+docker rm "$delete"
+break
+  #Docker File
+
+elif [ "$select" == "Docker File" ]; then
+MY_NAME1=$(zenity --forms --add-entry="Enter a File Name:" --add-entry="Enter Your Image Name:")
+        myname=$(echo "$MY_NAME1" | cut -d"|" -f1)
+        myimagename=$(echo "$MY_NAME1" | cut -d"|" -f2)
+        MY_DATA=$(zenity --text-info --title="Enter Dockeer file data" --editable)
+        echo "$MY_DATA" > "$myname"
+        docker build -t "$myimagename" -f "$myname" .
+break
+   #Docker Volume
+
+elif [ "$select" == "Docker Volume" ]; then
+
+  volume=$(zenity --list --title="Docker Volume" --text="Select the Volume Type" --radiolist --column="" --column "Option" TRUE "Host Volume" FALSE "Named Volume")
+break
+  #Host Volume
+
+  if [ "$volume" == "Host Volume" ];then
+    hostv=$(zenity --forms --title="Host Volume" --add-entry="Directory Name" --add-entry="Container Name" --add-entry="Directory To Be added in Container" --add-entry="Image")
+    DN=$(echo "$hostv" | cut -d "|" -f1)
+    CN=$(echo "$hostv" | cut -d "|" -f2)
+    DC=$(echo "$hostv" | cut -d "|" -f3)
+    IM=$(echo "$hostv" | cut -d "|" -f4)
+
+    mkdir "$DN"
+    docker run --name="$CN" -v "$DN":"$DC" -it docker.io/"$IM" bash
+break
+  #Named Volume
+  elif [ "$volume" == "Named Volume" ];then
+    namedv=$(zenity --forms --title="Named Volume" --add-entry="Name of Volume" --add-entry="Volume path" --add-entry="Image")
+    NV=$(echo "$namedv" | cut -d "|" -f1)
+    VP=$(echo "$namedv" | cut -d "|" -f2)
+    IM=$(echo "$namedv" | cut -d "|" -f3)
+    docker volume create "$NV"
+    docker run -v "$NV":"$VP" -it "$IM" bash
+   break
+  fi
+
+ # Enviroment & opens
+
+  elif [ "$select" == "Enviroment/open" ];then
+
+    evn=$( zenity --list --title="evn" --text="Select No of Env want to use" --radiolist --column="" --column "Option" TRUE "1" FALSE "2" FALSE "3" FALSE "4"  --height=260 )
+
+    open=$( zenity --list --title="Port" --text="Select No of Ports want to use" --radiolist --column="" --column "Option" TRUE "1" FALSE "2" FALSE "3" --height=260 )
+break
+ #1Env #1Port
+if [ "$evn" == "1" ] && [ "$open" == "1" ]; then
+    evn1=$(zenity --forms --add-entry="evnironment" --add-entry="open" --add-entry="image" --add-entry="name of container" --width=450 )
+    boss=$(echo "$evn1" | cut -d "|" -f1)
+    boss1=$(echo "$evn1" | cut -d "|" -f2)
+    boss2=$(echo "$evn1" | cut -d "|" -f3)
+    boss3=$(echo "$evn1" | cut -d "|" -f4)
+
+    docker run --name="$boss3" -e "$boss" -p "$boss1" -d "$boss2"
+break
+#2Envs #2Ports
+elif [ "$evn" == "2" ] && [ "$open" == "2" ]; then
+    evn2=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="open1" --add-entry="open2" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn2" | cut -d "|" -f1)
+    ep2=$(echo "$evn2" | cut -d "|" -f2)
+    ep3=$(echo "$evn2" | cut -d "|" -f3)
+    ep4=$(echo "$evn2" | cut -d "|" -f4)
+    ep5=$(echo "$evn2" | cut -d "|" -f5)
+    ep6=$(echo "$evn2" | cut -d "|" -f6)
+
+    docker run --name="$ep6" -e "$ep1" -e "$ep2" -p "$ep3" -p "$ep4" -d "$ep5"
+break
+#3Envs #3Ports
+elif [ "$evn" == "3" ] && [ "$open" == "3" ]; then
+    evn3=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="evnironment3" --add-entry="open1" --add-entry="open2" --add-entry="open3" --add-entry="image" --add-entry="name of container" --width=500)
+    ep1=$(echo "$evn3" | cut -d "|" -f1)
+    ep2=$(echo "$evn3" | cut -d "|" -f2)
+    ep3=$(echo "$evn3" | cut -d "|" -f3)
+    ep4=$(echo "$evn3" | cut -d "|" -f4)
+    ep5=$(echo "$evn3" | cut -d "|" -f5)
+    ep6=$(echo "$evn3" | cut -d "|" -f6)
+    ep7=$(echo "$evn3" | cut -d "|" -f7)
+    ep8=$(echo "$evn3" | cut -d "|" -f8)
+
+docker run --name="$ep8" -e "$ep1" -e "$ep2" -e "$ep3" -p "$ep4" -p "$ep5" -p "$ep6" -d "$ep7"
+break
+#4Envs #3Ports
+elif [ "$evn" == "4" ] && [ "$open" == "3" ]; then
+    evn3=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="evnironment3" --add-entry="evniroment4" --add-entry="open1" --add-entry="open2" --add-entry="open3" --add-entry="image" --add-entry="name of container" --width=550)
+    ep1=$(echo "$evn3" | cut -d "|" -f1)
+    ep2=$(echo "$evn3" | cut -d "|" -f2)
+    ep3=$(echo "$evn3" | cut -d "|" -f3)
+    ep4=$(echo "$evn3" | cut -d "|" -f4)
+    ep5=$(echo "$evn3" | cut -d "|" -f5)
+    ep6=$(echo "$evn3" | cut -d "|" -f6)
+    ep7=$(echo "$evn3" | cut -d "|" -f7)
+    ep8=$(echo "$evn3" | cut -d "|" -f8)
+    ep9=$(echo "$evn3" | cut -d "|" -f9)
+
+    docker run --name="$ep9" -e "$ep1" -e "$ep2" -e "$ep3" -e "$ep4" -p "$ep5" -p "$ep6" -p "$ep7" -d "$ep8"
+break
+#2Envs #1Port
+elif [ "$evn" == "2" ] && [ "$open" == "1" ]; then
+    evn2=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="open1" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn2" | cut -d "|" -f1)
+    ep2=$(echo "$evn2" | cut -d "|" -f2)
+    ep3=$(echo "$evn2" | cut -d "|" -f3)
+    ep4=$(echo "$evn2" | cut -d "|" -f4)
+    ep5=$(echo "$evn2" | cut -d "|" -f5)
+
+docker run --name="$ep5" -e "$ep1" -e "$ep2" -p "$ep3" -d "$ep4"
+break
+#3Envs #1Port
+elif [ "$evn" == "3" ] && [ "$open" == "1" ]; then
+    evn2=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="evniroment3" --add-entry="open1" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn2" | cut -d "|" -f1)
+    ep2=$(echo "$evn2" | cut -d "|" -f2)
+     ep3=$(echo "$evn2" | cut -d "|" -f3)
+    ep4=$(echo "$evn2" | cut -d "|" -f4)
+    ep5=$(echo "$evn2" | cut -d "|" -f5)
+    ep6=$(echo "$evn2" | cut -d "|" -f6)
+
+docker run --name="$ep6" -e "$ep1" -e "$ep2" -e "$ep3" -p "$ep4" -d "$ep5"
+break
+#4Envs #1Port
+elif [ "$evn" == "4" ] && [ "$open" == "1" ]; then
+    evn2=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="evniroment3" --add-entry="evniroment4" --add-entry="open1" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn2" | cut -d "|" -f1)
+    ep2=$(echo "$evn2" | cut -d "|" -f2)
+    ep3=$(echo "$evn2" | cut -d "|" -f3)
+    ep4=$(echo "$evn2" | cut -d "|" -f4)
+    ep5=$(echo "$evn2" | cut -d "|" -f5)
+    ep6=$(echo "$evn2" | cut -d "|" -f6)
+    ep7=$(echo "$evn2" | cut -d "|" -f7)
+
+docker run --name="$ep7" -e "$ep1" -e "$ep2" -e "$ep3" -e "$ep4" -p "$ep5" -d "$ep6"
+break
+#1Env #2Ports
+elif [ "$evn" == "1" ] && [ "$open" == "2" ]; then
+    evn2=$(zenity --forms --add-entry="evnironment1" --add-entry="open1" --add-entry="open2" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn2" | cut -d "|" -f1)
+    ep2=$(echo "$evn2" | cut -d "|" -f2)
+    ep3=$(echo "$evn2" | cut -d "|" -f3)
+    ep4=$(echo "$evn2" | cut -d "|" -f4)
+    ep5=$(echo "$evn2" | cut -d "|" -f5)
+docker run --name="$ep5" -e "$ep1" -p "$ep2" -p "$ep3" -d "$ep4"
+break
+#3Envs #2Ports
+elif [ "$evn" == "3" ] && [ "$open" == "2" ]; then
+    evn3=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="evnironment3" --add-entry="open1" --add-entry="open2" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn3" | cut -d "|" -f1)
+    ep2=$(echo "$evn3" | cut -d "|" -f2)
+    ep3=$(echo "$evn3" | cut -d "|" -f3)
+    ep4=$(echo "$evn3" | cut -d "|" -f4)
+    ep5=$(echo "$evn3" | cut -d "|" -f5)
+    ep6=$(echo "$evn3" | cut -d "|" -f6)
+    ep7=$(echo "$evn3" | cut -d "|" -f7)
+
+docker run --name="$ep7" -e "$ep1" -e "$ep2" -e "$ep3" -p "$ep4" -p"$ep5" -d "$ep6"
+break
+#4Envs #2Ports
+elif [ "$evn" == "4" ] && [ "$open" == "2" ]; then
+    evn3=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2" --add-entry="evnironment3" --add-entry="evniroment4" --add-entry="open1" --add-entry="open2" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn3" | cut -d "|" -f1)
+    ep2=$(echo "$evn3" | cut -d "|" -f2)
+    ep3=$(echo "$evn3" | cut -d "|" -f3)
+    ep4=$(echo "$evn3" | cut -d "|" -f4)
+    ep5=$(echo "$evn3" | cut -d "|" -f5)
+    ep6=$(echo "$evn3" | cut -d "|" -f6)
+    ep7=$(echo "$evn3" | cut -d "|" -f7)
+    ep8=$(echo "$evn3" | cut -d "|" -f8)
+
+docker run --name="$ep8" -e "$ep1" -e "$ep2" -e "$ep3" -e "$ep4" -p "$ep5" -p "$ep6" -d "$ep7"
+break
+#1Env #3Ports
+elif [ "$evn" == "1" ] && [ "$open" == "3" ]; then
+    evn3=$(zenity --forms --add-entry="evnironment1" --add-entry="open1" --add-entry="open2" --add-entry="open3" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn3" | cut -d "|" -f1)
+    ep2=$(echo "$evn3" | cut -d "|" -f2)
+    ep3=$(echo "$evn3" | cut -d "|" -f3)
+    ep4=$(echo "$evn3" | cut -d "|" -f4)
+    ep5=$(echo "$evn3" | cut -d "|" -f5)
+    ep6=$(echo "$evn3" | cut -d "|" -f6)
+
+docker run --name="$ep6" -e "$ep1" -p "$ep2" -p "$ep3" -p "$ep4" -d "$ep5"
+break
+#4Envs #3Ports
+elif [ "$evn" == "4" ] && [ "$open" == "3" ]; then
+    evn3=$(zenity --forms --add-entry="evnironment1" --add-entry="evniroment2"  --add-entry="open1" --add-entry="open2" --add-entry="open3" --add-entry="image" --add-entry="name of container" --width=450)
+    ep1=$(echo "$evn3" | cut -d "|" -f1)
+    ep2=$(echo "$evn3" | cut -d "|" -f2)
+    ep3=$(echo "$evn3" | cut -d "|" -f3)
+    ep4=$(echo "$evn3" | cut -d "|" -f4)
+    ep5=$(echo "$evn3" | cut -d "|" -f5)
+    ep6=$(echo "$evn3" | cut -d "|" -f6)
+    ep7=$(echo "$evn3" | cut -d "|" -f7)
+
+docker run --name="$ep7" -e "$ep1" -e "$ep2" -p "$ep3" -p "$ep4" -p "$ep5" -d "$ep6"
+else 
+	echo "Thank You For Using This Docker Script"
+	break
+fi
+#End of Enviroment&Port
+
+#Inspect Image
+elif [ "$select" == "Image Inspect" ];then
+
+IM=$(zenity --forms --title="Inspect Image" --add-entry="Image Name")
+
+docker inspect $IM
+
+#End of Full Script
+
+#Delete Image
+elif [ "$select" == "Delete Image" ]; then
+docker images > deleteimage.txt
+
+zenity --text-info --filename="deleteimage.txt" --height=500 --width=550
+
+DeleteImage=$(zenity --forms --title=Deleting --add-entry="Image ID")
+
+docker image rm $DeleteImage -f
+
+break
+
+#Docker Images
+elif [ "$select" == "View Image" ]; then
+
+docker images >dockerimages.txt
+
+zenity --text-info --filename="dockerimages.txt" --height=500 --width=400
+
+break
+
+fi
